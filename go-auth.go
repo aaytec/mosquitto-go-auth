@@ -192,6 +192,7 @@ func setCache(authOpts map[string]string) {
 		db := 3
 		password := ""
 		cluster := false
+		tls := false
 
 		if authOpts["cache_mode"] == "true" {
 			cluster = true
@@ -199,6 +200,10 @@ func setCache(authOpts map[string]string) {
 
 		if cachePassword, ok := authOpts["cache_password"]; ok {
 			password = cachePassword
+		}
+
+		if cacheTls, ok := authOpts["cache_tls"]; ok {
+			tls = cacheTls == "true"
 		}
 
 		if cluster {
@@ -224,6 +229,7 @@ func setCache(authOpts map[string]string) {
 				time.Duration(authJitterSeconds)*time.Second,
 				time.Duration(aclJitterSeconds)*time.Second,
 				refreshExpiration,
+				tls,
 			)
 
 		} else {
@@ -254,6 +260,7 @@ func setCache(authOpts map[string]string) {
 				time.Duration(authJitterSeconds)*time.Second,
 				time.Duration(aclJitterSeconds)*time.Second,
 				refreshExpiration,
+				tls,
 			)
 		}
 

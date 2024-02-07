@@ -285,6 +285,7 @@ When using Redis, the following defaults will be used if no values are given. Al
 auth_opt_cache_host localhost
 auth_opt_cache_port 6379
 auth_opt_cache_password pwd
+auth_opt_cache_tls true
 auth_opt_cache_db 3
 ```
 
