@@ -67,7 +67,7 @@ func NewGoStore(authExpiration, aclExpiration, authJitter, aclJitter time.Durati
 }
 
 // NewSingleRedisStore initializes a cache using a single Redis instance as the store.
-func NewSingleRedisStore(host, port, password string, db int, authExpiration, aclExpiration, authJitter, aclJitter time.Duration, refreshExpiration bool, enableTls bool) *redisStore {
+func NewSingleRedisStore(host, port, password string, db int, authExpiration, aclExpiration, authJitter, aclJitter time.Duration, refreshExpiration bool, enableTls bool, tlsVersion uint16) *redisStore {
 
 	addr := fmt.Sprintf("%s:%s", host, port)
 	opts := new(goredis.Options)
@@ -76,8 +76,10 @@ func NewSingleRedisStore(host, port, password string, db int, authExpiration, ac
 	opts.DB = db
 
 	if enableTls {
-		opts.TLSConfig = &tls.Config{
-			MinVersion: tls.VersionTLS12,
+		opts.TLSConfig = new(tls.Config)
+
+		if tlsVersion != 0 {
+			opts.TLSConfig.MinVersion = tlsVersion
 		}
 	}
 
@@ -96,15 +98,17 @@ func NewSingleRedisStore(host, port, password string, db int, authExpiration, ac
 }
 
 // NewSingleRedisStore initializes a cache using a Redis Cluster as the store.
-func NewRedisClusterStore(password string, addresses []string, authExpiration, aclExpiration, authJitter, aclJitter time.Duration, refreshExpiration bool, enableTls bool) *redisStore {
+func NewRedisClusterStore(password string, addresses []string, authExpiration, aclExpiration, authJitter, aclJitter time.Duration, refreshExpiration bool, enableTls bool, tlsVersion uint16) *redisStore {
 
 	opts := new(goredis.ClusterOptions)
 	opts.Addrs = addresses
 	opts.Password = password
 
 	if enableTls {
-		opts.TLSConfig = &tls.Config{
-			MinVersion: tls.VersionTLS12,
+		opts.TLSConfig = new(tls.Config)
+
+		if tlsVersion != 0 {
+			opts.TLSConfig.MinVersion = tlsVersion
 		}
 	}
 
