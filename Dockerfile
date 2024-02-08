@@ -1,11 +1,11 @@
 # Define Mosquitto version, see also .github/workflows/build_and_push_docker_images.yml for
 # the automatically built images
-ARG MOSQUITTO_VERSION=2.0.15
+ARG MOSQUITTO_VERSION=2.0.18
 # Define libwebsocket version
-ARG LWS_VERSION=4.2.2
+ARG LWS_VERSION=4.3.3
 
 # Use debian:stable-slim as a builder for Mosquitto and dependencies.
-FROM debian:stable-slim as mosquitto_builder
+FROM ubuntu:noble as mosquitto_builder
 ARG MOSQUITTO_VERSION
 ARG LWS_VERSION
 
@@ -92,7 +92,7 @@ RUN set -ex; \
 	  go build pw-gen/pw.go
 
 #Start from a new image.
-FROM debian:stable-slim
+FROM ubuntu:noble
 
 RUN set -ex; \
     apt update; \

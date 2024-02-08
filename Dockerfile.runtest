@@ -69,6 +69,9 @@ RUN export PATH=$PATH:/usr/local/go/bin && export CGO_CFLAGS="-I/usr/local/inclu
 
 RUN apt-get update && apt-get install --no-install-recommends -y mariadb-server postgresql redis-server sudo
 
+RUN wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb && \
+    dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
+
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add - && \
     echo "deb http://repo.mongodb.org/apt/debian buster/mongodb-org/4.4 main" > /etc/apt/sources.list.d/mongodb-org-4.4.list && \
     apt-get update && \
