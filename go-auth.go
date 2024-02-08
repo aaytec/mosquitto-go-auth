@@ -4,6 +4,7 @@ import "C"
 
 import (
 	"context"
+	"crypto/tls"
 	"os"
 	"strconv"
 	"strings"
@@ -192,6 +193,8 @@ func setCache(authOpts map[string]string) {
 		db := 3
 		password := ""
 		cluster := false
+		enableTls := false
+		var tlsVersion uint16 = 0
 
 		if authOpts["cache_mode"] == "true" {
 			cluster = true
@@ -199,6 +202,30 @@ func setCache(authOpts map[string]string) {
 
 		if cachePassword, ok := authOpts["cache_password"]; ok {
 			password = cachePassword
+		}
+
+		if cacheTls, ok := authOpts["cache_tls"]; ok {
+			enableTls = cacheTls == "true"
+		}
+
+		if cacheTlsVersion, ok := authOpts["cache_tls_version"]; ok && enableTls {
+
+			switch {
+			case cacheTlsVersion == "1.0":
+				tlsVersion = tls.VersionTLS10
+				break
+			case cacheTlsVersion == "1.1":
+				tlsVersion = tls.VersionTLS11
+				break
+			case cacheTlsVersion == "1.2":
+				tlsVersion = tls.VersionTLS12
+				break
+			case cacheTlsVersion == "1.3":
+				tlsVersion = tls.VersionTLS13
+				break
+			default:
+				panic("invalid auth_opt provided for tls version. set one of [1.0, 1.1, 1.2, 1.3]")
+			}
 		}
 
 		if cluster {
@@ -224,6 +251,8 @@ func setCache(authOpts map[string]string) {
 				time.Duration(authJitterSeconds)*time.Second,
 				time.Duration(aclJitterSeconds)*time.Second,
 				refreshExpiration,
+				enableTls,
+				tlsVersion,
 			)
 
 		} else {
@@ -254,6 +283,8 @@ func setCache(authOpts map[string]string) {
 				time.Duration(authJitterSeconds)*time.Second,
 				time.Duration(aclJitterSeconds)*time.Second,
 				refreshExpiration,
+				enableTls,
+				tlsVersion,
 			)
 		}
 

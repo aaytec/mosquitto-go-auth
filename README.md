@@ -286,6 +286,10 @@ auth_opt_cache_host localhost
 auth_opt_cache_port 6379
 auth_opt_cache_password pwd
 auth_opt_cache_db 3
+
+# optional
+auth_opt_cache_tls true
+auth_opt_cache_tls_version <1.0, 1.1, 1.2, 1.3>
 ```
 
 If you want to use a Redis cluster as your cache, you may omit previous Redis options and instead need to set `auth_opt_cache_mode` to `cluster` and provide the different addresses as a list of comma separated `host:port` strings with the `auth_opt_cache_addresses` options:

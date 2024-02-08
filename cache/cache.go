@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"crypto/sha1"
+	"crypto/tls"
 	b64 "encoding/base64"
 	"fmt"
 	"hash"
@@ -66,13 +67,24 @@ func NewGoStore(authExpiration, aclExpiration, authJitter, aclJitter time.Durati
 }
 
 // NewSingleRedisStore initializes a cache using a single Redis instance as the store.
-func NewSingleRedisStore(host, port, password string, db int, authExpiration, aclExpiration, authJitter, aclJitter time.Duration, refreshExpiration bool) *redisStore {
+func NewSingleRedisStore(host, port, password string, db int, authExpiration, aclExpiration, authJitter, aclJitter time.Duration, refreshExpiration bool, enableTls bool, tlsVersion uint16) *redisStore {
+
 	addr := fmt.Sprintf("%s:%s", host, port)
-	redisClient := goredis.NewClient(&goredis.Options{
-		Addr:     addr,
-		Password: password, // no password set
-		DB:       db,       // use default db
-	})
+	opts := new(goredis.Options)
+	opts.Addr = addr
+	opts.Password = password
+	opts.DB = db
+
+	if enableTls {
+		opts.TLSConfig = new(tls.Config)
+
+		if tlsVersion != 0 {
+			opts.TLSConfig.MinVersion = tlsVersion
+		}
+	}
+
+	redisClient := goredis.NewClient(opts)
+
 	//If cache is on, try to start redis.
 	return &redisStore{
 		authExpiration:    authExpiration,
@@ -86,12 +98,21 @@ func NewSingleRedisStore(host, port, password string, db int, authExpiration, ac
 }
 
 // NewSingleRedisStore initializes a cache using a Redis Cluster as the store.
-func NewRedisClusterStore(password string, addresses []string, authExpiration, aclExpiration, authJitter, aclJitter time.Duration, refreshExpiration bool) *redisStore {
-	clusterClient := goredis.NewClusterClient(
-		&goredis.ClusterOptions{
-			Addrs:    addresses,
-			Password: password,
-		})
+func NewRedisClusterStore(password string, addresses []string, authExpiration, aclExpiration, authJitter, aclJitter time.Duration, refreshExpiration bool, enableTls bool, tlsVersion uint16) *redisStore {
+
+	opts := new(goredis.ClusterOptions)
+	opts.Addrs = addresses
+	opts.Password = password
+
+	if enableTls {
+		opts.TLSConfig = new(tls.Config)
+
+		if tlsVersion != 0 {
+			opts.TLSConfig.MinVersion = tlsVersion
+		}
+	}
+
+	clusterClient := goredis.NewClusterClient(opts)
 
 	return &redisStore{
 		authExpiration:    authExpiration,
@@ -182,7 +203,7 @@ func (s *goStore) CheckAuthRecord(ctx context.Context, username, password string
 	return s.checkRecord(ctx, record, expirationWithJitter(s.authExpiration, s.authJitter))
 }
 
-//CheckAclCache checks if the username/topic/clientid/acc mix is present in the cache. Return if it's present and, if so, if it was granted privileges.
+// CheckAclCache checks if the username/topic/clientid/acc mix is present in the cache. Return if it's present and, if so, if it was granted privileges.
 func (s *goStore) CheckACLRecord(ctx context.Context, username, topic, clientid string, acc int) (bool, bool) {
 	record := toACLRecord(username, topic, clientid, acc, s.h)
 	return s.checkRecord(ctx, record, expirationWithJitter(s.aclExpiration, s.aclJitter))
@@ -211,7 +232,7 @@ func (s *redisStore) CheckAuthRecord(ctx context.Context, username, password str
 	return s.checkRecord(ctx, record, s.authExpiration)
 }
 
-//CheckAclCache checks if the username/topic/clientid/acc mix is present in the cache. Return if it's present and, if so, if it was granted privileges.
+// CheckAclCache checks if the username/topic/clientid/acc mix is present in the cache. Return if it's present and, if so, if it was granted privileges.
 func (s *redisStore) CheckACLRecord(ctx context.Context, username, topic, clientid string, acc int) (bool, bool) {
 	record := toACLRecord(username, topic, clientid, acc, s.h)
 	return s.checkRecord(ctx, record, s.aclExpiration)
@@ -266,7 +287,7 @@ func (s *goStore) SetAuthRecord(ctx context.Context, username, password string, 
 	return nil
 }
 
-//SetAclCache sets a mix, granted option and expiration time.
+// SetAclCache sets a mix, granted option and expiration time.
 func (s *goStore) SetACLRecord(ctx context.Context, username, topic, clientid string, acc int, granted string) error {
 	record := toACLRecord(username, topic, clientid, acc, s.h)
 	s.client.Set(record, granted, expirationWithJitter(s.aclExpiration, s.aclJitter))
@@ -280,7 +301,7 @@ func (s *redisStore) SetAuthRecord(ctx context.Context, username, password strin
 	return s.setRecord(ctx, record, granted, expirationWithJitter(s.authExpiration, s.authJitter))
 }
 
-//SetAclCache sets a mix, granted option and expiration time.
+// SetAclCache sets a mix, granted option and expiration time.
 func (s *redisStore) SetACLRecord(ctx context.Context, username, topic, clientid string, acc int, granted string) error {
 	record := toACLRecord(username, topic, clientid, acc, s.h)
 	return s.setRecord(ctx, record, granted, expirationWithJitter(s.aclExpiration, s.aclJitter))
